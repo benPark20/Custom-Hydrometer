@@ -2,3 +2,5 @@
 # See https://docs.wokwi.com/guides/libraries
 
 DHT sensor library
+Adafruit SSD1306
+Adafruit GFX Library
