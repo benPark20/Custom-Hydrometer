@@ -3,6 +3,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 #include <Wire.h>
+#include <Adafruit_NeoPixel.h>
 //define dht object
 #define DHTPIN 28
 #define DHTTYPE DHT22
@@ -13,18 +14,24 @@ DHT dht(DHTPIN, DHTTYPE);
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-//settign up rgb pins
-const RGBPins [] = {16, 17, 18, 19, 20, 21, 26, 27}
+
+//define LED object
+#define LEDPIN 6
+#define NUMPIXELS 1
+Adafruit_NeoPixel led(NUMPIXELS, LEDPIN, NEO_GRB + NEO_KHZ800);
+
+//define button
+#define buttonPin 27
+
 //global variables
 float lastH;
 float lastT;
+float buttonState = 0;
 
 void setup() {
   Serial1.begin(9600);
-  Serial1.println("Hello, Raspberry Pi Pico W!");
+  Serial1.println("initialized");
   dht.begin();
-  for( int i=0; i<9; i++)
-    pinMode(RGBPins[i], OUTPUT);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3c);
   display.clearDisplay();
   display.display();
@@ -37,13 +44,17 @@ void setup() {
   display.setCursor(0, 20);
   display.println(F("Done!"));
   display.display();
+  led.begin();
+  led.clear();
+  led.setPixelColor(0, led.Color(150, 150, 150));
+  led.show();
 }
 void loop() {
   // put your main code here, to run repeatedly:
   // variables
   float t = dht.readTemperature(true);
   float h = dht.readHumidity();
-
+  led.setPixelColor(1, led.Color(100,100,0));
 //check if variables get a reading
   if (isnan(h) || isnan(t)) {
     Serial1.println(F("Failed to read from DHT sensor!"));
@@ -52,6 +63,8 @@ void loop() {
     display.display();
   return;
   }
+
+  buttonState = digitalRead(buttonPin);
   if(lastH != h || lastT != t){
     lastH = h;
     lastT = t;
@@ -60,11 +73,6 @@ void loop() {
     Serial1.println(h);
     Serial1.print(F("Tempurature: "));
     Serial1.println(t);
-    
-    //show humidity on LEDs
-    if (h < 30){
-      analogWrite(RGBPins[17], 255);
-    }
   
     // display contitions
     display.clearDisplay();
@@ -83,9 +91,20 @@ void loop() {
     display.setCursor(86,44);
     display.print("o");
     display.display();
+    led.clear();
+    led.setPixelColor(0, led.Color(0, 255, 0));
+    led.show();
+    if(h > 40){
+      led.clear();
+      led.setPixelColor(0, led.Color(200, 200, 0));
+      led.show();
+    }
+    if(h > 70){
+      led.clear();
+      led.setPixelColor(0, led.Color(255, 0, 0));
+      led.show();
+    }
   }
-  else {
-    return;
-  }
+
   delay(2000);
 }
